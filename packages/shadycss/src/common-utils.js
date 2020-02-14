@@ -1,16 +1,17 @@
 /**
 @license
 Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+This code may only be used under the BSD style license found at
+http://polymer.github.io/LICENSE.txt The complete set of authors may be found at
+http://polymer.github.io/AUTHORS.txt The complete set of contributors may be
+found at http://polymer.github.io/CONTRIBUTORS.txt Code distributed by Google as
+part of the polymer project is also subject to an additional IP rights grant
+found at http://polymer.github.io/PATENTS.txt
 */
 
 'use strict';
 
-import { MIXIN_MATCH, VAR_ASSIGN } from './common-regex.js';
+import {MIXIN_MATCH, VAR_ASSIGN} from './common-regex.js';
 
 /**
  * @param {Element} element
@@ -51,6 +52,9 @@ export function getComputedStyleValue(element, property) {
  * @return {boolean}
  */
 export function detectMixin(cssText) {
+  // TODO(aomarks) This function returns true for every use of a CSS custom
+  // property. That seems wrong, but is this function just confusingly
+  // named/factored?
   const has = MIXIN_MATCH.test(cssText) || VAR_ASSIGN.test(cssText);
   // reset state of the regexes
   MIXIN_MATCH.lastIndex = 0;
