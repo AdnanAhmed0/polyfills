@@ -54,7 +54,7 @@ export default class ScopingShim {
   }
   _generateScopeSelector(name) {
     let id = this._scopeCounter[name] = (this._scopeCounter[name] || 0) + 1;
-    console.log('_generateScopeSelector', {name, id});
+    console.log('_generateScopeSelector', `${name}-${id}`);
     return `${name}-${id}`;
   }
   getStyleAst(style) {
@@ -74,6 +74,7 @@ export default class ScopingShim {
    * @param {string=} typeExtension
    */
   prepareTemplate(template, elementName, typeExtension) {
+    console.log('prepareTemplate', {elementName, template});
     this.prepareTemplateDom(template, elementName);
     this.prepareTemplateStyles(template, elementName, typeExtension);
   }
@@ -233,7 +234,6 @@ export default class ScopingShim {
    * Flush and apply custom styles to document
    */
   flushCustomStyles() {
-    console.log('flushCustomStyles');
     if (disableRuntime) {
       return;
     }
@@ -329,6 +329,7 @@ export default class ScopingShim {
    * @param {Object=} overrideProps
    */
   styleElement(host, overrideProps) {
+    console.log('styleElement', {tag: host.localName, host, overrideProps});
     parts.onStyleElement(host);
     if (disableRuntime) {
       if (overrideProps) {
@@ -379,7 +380,6 @@ export default class ScopingShim {
         styleInfo.ownStylePropertyNames.length) {
       this._applyStyleProperties(host, styleInfo);
     } else {
-      console.log('not calling _applyStyleProperties', host);
     }
   }
   /**
@@ -451,7 +451,6 @@ export default class ScopingShim {
     // only generate new scope if cached style is not found
     styleInfo.scopeSelector =
         cachedScopeSelector || this._generateScopeSelector(is);
-    console.log('_applyStyleProperties', {is, cacheEntry, oldScopeSelector, newScopeSelector: styleInfo.scopeSelector});
     let style = StyleProperties.applyElementStyle(
         host, styleInfo.styleProperties, styleInfo.scopeSelector, cachedStyle);
     if (!nativeShadow) {
@@ -467,7 +466,6 @@ export default class ScopingShim {
   _updateProperties(host, styleInfo) {
     let owner = this._styleOwnerForNode(host);
     let ownerStyleInfo = StyleInfo.get(owner);
-    console.log('_updateProperties', {host, styleInfo, ownerStyleInfo});
     let ownerProperties = ownerStyleInfo.styleProperties;
     // style owner has not updated properties yet
     // go up the chain and force property update,

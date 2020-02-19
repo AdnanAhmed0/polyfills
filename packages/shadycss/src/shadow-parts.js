@@ -93,8 +93,11 @@ found at http://polymer.github.io/PATENTS.txt
  *     that has been prepared by ShadyCSS.
  */
 
+import StyleCache from './style-cache.js';
 import StyleInfo from './style-info.js';
 import StyleProperties from './style-properties.js';
+import StyleTransformer from './style-transformer.js';
+import {applyCss} from './style-util.js';
 
 function customProperties(parentScope, childScope, partName, propertyName) {}
 
@@ -216,14 +219,25 @@ export function prepareTemplate(elementName, styleAst) {
       if (consumedProperties.length > 0) {
         const {ce, partList} = parsePartSelector(rule.selector);
         const key = [elementName, ce, partList].join(':');
-        console.log('SETTING KEY', key, consumedProperties);
-        partRuleCustomProperties.set(key, consumedProperties);
+        // partRuleCustomProperties.set(key, consumedProperties);
+        let rules = partRuleCustomProperties.get(key);
+        if (rules === undefined) {
+          rules = [];
+          partRuleCustomProperties.set(key, rules);
+        }
+        rules.push(rule);
       }
     }
   }
 }
 
-function customPropertiesForPartRule(parentScope, childScope, partName) {
+// function customPropertiesForPartRule(parentScope, childScope, partName) {
+//  const key = [parentScope, childScope, partName].join(':');
+//  const properties = partRuleCustomProperties.get(key);
+//  return properties === undefined ? [] : properties;
+//}
+
+function customPropertyRulesForPart(parentScope, childScope, partName) {
   const key = [parentScope, childScope, partName].join(':');
   const properties = partRuleCustomProperties.get(key);
   return properties === undefined ? [] : properties;
@@ -272,6 +286,24 @@ function scopeForRoot(root) {
   }
 }
 
+const partCache = new StyleCache();
+
+let partNumber = 0;
+
+function getPartId(partName, parentScope, childScope, styleInfo) {
+  const key = partName + ':' + parentScope + ':' + childScope;
+  const entry = partCache.fetch(
+      key, styleInfo.styleProperties, styleInfo.ownStylePropertyNames);
+  if (entry !== undefined) {
+    return entry.scopeSelector;
+  } else {
+    const id = String(partNumber++);
+    partCache.store(
+        key, styleInfo.styleProperties, /* styleElement */ null, id);
+    return id;
+  }
+}
+
 /**
  * Add the appropriate "part_" class to all parts in the Shady root of the
  * given host.
@@ -279,7 +311,6 @@ function scopeForRoot(root) {
  * @param {!HTMLElement} host
  */
 export function scopeAllHostParts(host) {
-  console.log('scopeAllHostParts', {host});
   if (!host.shadowRoot) {
     return;
   }
@@ -301,22 +332,30 @@ export function scopeAllHostParts(host) {
     removeAllPartSpecifiers(partNode);
     const partAttr = partNode.getAttribute('part');
     for (const partName of parsePartAttribute(partAttr)) {
-      addPartSpecifier(
-          partNode, formatPartSpecifier(partName, scope, hostScope));
-      const props = customPropertiesForPartRule(hostScope, scope, partName);
-
-      console.log('XXXXXXXXX', {host, hostScope, scope, partName, props});
-      if (props.length > 0) {
-        const info = StyleInfo.get(host);
-        for (const prop of props) {
-          console.log(`  ${prop} = ${info.styleProperties[prop]}`);
+      const customPropertyRules =
+          customPropertyRulesForPart(hostScope, scope, partName);
+      if (customPropertyRules.length > 0) {
+        const styleInfo = StyleInfo.get(host);
+        const partId = getPartId(partName, hostScope, scope, styleInfo);
+        for (const rule of customPropertyRules) {
+          StyleProperties.applyProperties(rule, styleInfo.styleProperties);
+          console.log('STYLING', rule);
+          const s = rule.selector.replace(']', `_${partId}]`);
+          const css = `${s} { ${rule.cssText} }`;
+          applyCss(css, 'TODO', /* head */ null, /* first child */ null);
         }
+        addPartSpecifier(
+            partNode,
+            formatPartSpecifier(partName + '_' + partId, scope, hostScope));
+      } else {
+        addPartSpecifier(
+            partNode, formatPartSpecifier(partName, scope, hostScope));
       }
       const exportParts = exportPartsMap[partName];
       if (exportParts !== undefined) {
         for (const {partName, scope, hostScope} of exportParts) {
-          const props = customPropertiesForPartRule(hostScope, scope, partName);
-          console.log('YYYYYYYYYYY', {host, hostScope, scope, partName, props});
+          // const props = customPropertiesForPartRule(hostScope, scope,
+          // partName);
           addPartSpecifier(
               partNode, formatPartSpecifier(partName, scope, hostScope));
         }

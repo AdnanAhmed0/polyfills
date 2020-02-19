@@ -52,8 +52,6 @@ class StyleProperties {
  * @return {Array<string>}
  */
   decorateStyles(rules) {
-    console.log('-----------------');
-    console.log({rules});
     let self = this, props = {}, keyframes = [], ruleIndex = 0;
     StyleUtil.forEachRule(rules, function(rule) {
       self.decorateRule(rule);
@@ -70,7 +68,6 @@ class StyleProperties {
     for (let i in props) {
       names.push(i);
     }
-    console.log({names});
     return names;
   }
 
@@ -131,7 +128,6 @@ class StyleProperties {
   }
 
   collectPropertiesInCssText(cssText, props) {
-    console.log({cssText, props});
     let m;
     while ((m = RX.VAR_CONSUMED.exec(cssText))) {
       let name = m[1];
@@ -404,7 +400,7 @@ class StyleProperties {
     let {styleRules: rules, cssBuild} = StyleInfo.get(element);
     let keyframeTransforms =
       this._elementKeyframeTransforms(element, rules, scopeSelector);
-    return StyleTransformer.elementStyles(element, rules, function(rule) {
+    const css = StyleTransformer.elementStyles(element, rules, function(rule) {
       self.applyProperties(rule, properties);
       if (!nativeShadow &&
           !StyleUtil.isKeyframesSelector(rule) &&
@@ -415,6 +411,8 @@ class StyleProperties {
         self._scopeSelector(rule, hostRx, hostSelector, scopeSelector);
       }
     }, cssBuild);
+    console.log('transformStyles', {tag: element.localName, scopeSelector, properties, css});
+    return css;
   }
 
   /**
@@ -558,7 +556,6 @@ class StyleProperties {
         // apply css after the scope style of the element to help with
         // style precedence rules.
         if (cssText) {
-          console.log('CREATE', {cssText, selector, placeholder: styleInfo.placeholder});
           style = StyleUtil.applyCss(cssText, selector, null,
             styleInfo.placeholder);
         }
@@ -569,7 +566,6 @@ class StyleProperties {
             // refresh the text content of the style to revalidate them.
           style.textContent = cssText;
         }
-        console.log('CREATE2', {style, placeholder: styleInfo.placeholder});
         StyleUtil.applyStyle(style, null, styleInfo.placeholder);
       }
     }

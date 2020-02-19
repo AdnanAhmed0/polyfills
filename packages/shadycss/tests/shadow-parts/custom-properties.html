@@ -70,7 +70,7 @@
       assert.equal(getComputedStyle(p1).color, red);
     });
 
-    test.skip('property set in part rule', function() {
+    test('property set in part rule', function() {
       // This case is unsupported because custom properties are evaluated at
       // the rule definition site, not at the consumption site.
       assert.equal(getComputedStyle(p1).backgroundColor, blue);
